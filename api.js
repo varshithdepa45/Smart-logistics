@@ -1,12 +1,12 @@
 /**
  * LOGISTICS FRONTEND API CLIENT
  * =============================
- * Handles all communication with the backend at http://localhost:8000
+ * Handles all communication with the backend at http://172.31.0.218:8000
  * Includes WebSocket support for real-time event broadcasting
  */
 
-const API_BASE_URL = "http://localhost:8000";
-const WS_BASE_URL = "ws://localhost:8000";
+const API_BASE_URL = "http://172.31.0.218:8000";
+const WS_BASE_URL = "ws://172.31.0.218:8000";
 
 // WebSocket connection for real-time events
 let websocket = null;

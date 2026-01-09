@@ -1,6 +1,7 @@
 # 📱 STEP-BY-STEP: How to Open on Other Devices
 
 ## The Goal
+
 Run the backend on **your Mac** and access it from **another device** (laptop, phone, tablet) on the same WiFi.
 
 ---
@@ -16,6 +17,7 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 
 **You'll see output like:**
+
 ```
 inet 192.168.1.100 netmask 0xffffff00 broadcast 192.168.1.255
 ```
@@ -29,6 +31,7 @@ inet 192.168.1.100 netmask 0xffffff00 broadcast 192.168.1.255
 ### **STEP 2: Edit api.js - Tell Frontend Where Backend Is**
 
 **On your Mac, open the file:**
+
 ```
 /Users/varshithreddy/connections/Smart-logistics/api.js
 ```
@@ -58,18 +61,21 @@ const WS_BASE_URL = "ws://192.168.1.100:8000";
 **Open 3 Terminal windows/tabs on your Mac:**
 
 **Terminal Window 1 - Backend:**
+
 ```bash
 cd /Users/varshithreddy/connections/Smart-logistics
 /Users/varshithreddy/connections/.venv/bin/python backend/logistics_backend.py
 ```
 
 **Terminal Window 2 - Frontend:**
+
 ```bash
 cd /Users/varshithreddy/connections/Smart-logistics
 /Users/varshithreddy/connections/.venv/bin/python -m http.server 8080 --bind 0.0.0.0
 ```
 
 **Terminal Window 3 - ML Service:**
+
 ```bash
 cd /Users/varshithreddy/connections/Smart-logistics
 /Users/varshithreddy/connections/.venv/bin/python ml_service/main.py
@@ -88,6 +94,7 @@ cd /Users/varshithreddy/connections/Smart-logistics
 **2. Open a web browser**
 
 **3. In the address bar, type:**
+
 ```
 http://192.168.1.100:8080
 ```
@@ -101,12 +108,14 @@ http://192.168.1.100:8080
 ## ✅ What You Should See
 
 **If everything works:**
+
 - ✅ The Smart Logistics UI loads
 - ✅ You see a map
 - ✅ You see "Go Online" button
 - ✅ You see driver profile
 
 **If it doesn't work:**
+
 - ❌ See "Connection Refused" → Check IP is correct
 - ❌ See blank page → Refresh browser (Cmd+R or Ctrl+R)
 - ❌ See loading spinner → Wait 5 seconds
@@ -118,11 +127,13 @@ http://192.168.1.100:8080
 ### **Check Everything is Working**
 
 **On the other device, open browser console:**
+
 - **Mac:** Press `Cmd + Option + J`
 - **Windows:** Press `Ctrl + Shift + J`
 - **Phone/Tablet:** Developer tools (varies by browser)
 
 **Look for this message:**
+
 ```
 [API] WebSocket connected - ready to receive emergency broadcasts
 ```
@@ -136,24 +147,28 @@ If you see this, **you're connected!** ✅
 ### **Now Test with Multiple Devices:**
 
 **Device 1 (Your Mac Browser):**
+
 1. Open: `http://localhost:8080`
 2. Click "Go Online"
 3. Wait for ride request
 4. Click "Accept"
 
 **Device 2 (Laptop/Phone):**
+
 1. Open: `http://192.168.1.100:8080`
 2. Click "Go Online"
 3. Wait for ride request
 4. Click "Accept"
 
 **Device 1 - Report Emergency:**
+
 1. Click "Report Issue"
 2. Select "Vehicle Breakdown"
 3. Add comment: "Complete vehicle breakdown"
 4. Click "Submit"
 
 **Watch Device 2:**
+
 - 🚨 You'll see instant notification!
 - If Device 2 is available, you'll see "Order Assigned to You!"
 
@@ -164,6 +179,7 @@ If you see this, **you're connected!** ✅
 ### **Problem 1: "Can't connect to http://192.168.1.100:8080"**
 
 **Checklist:**
+
 ```
 1. ✓ Did you find the correct IP? (ifconfig)
 2. ✓ Did you update api.js with that IP?
@@ -173,6 +189,7 @@ If you see this, **you're connected!** ✅
 ```
 
 **Quick Fix:**
+
 - On other device, try: `http://192.168.1.100:8000/health`
 - If that loads, the backend is reachable
 - If not, check your IP address is correct
@@ -182,6 +199,7 @@ If you see this, **you're connected!** ✅
 ### **Problem 2: "WebSocket connection failed"**
 
 **You'll see in browser console:**
+
 ```
 [API] WebSocket error
 ```
@@ -189,6 +207,7 @@ If you see this, **you're connected!** ✅
 **Cause:** `api.js` still has `localhost` instead of your IP
 
 **Fix:**
+
 1. Edit `api.js` again
 2. Check line 8-9 have your IP (not localhost)
 3. Save file
@@ -199,11 +218,13 @@ If you see this, **you're connected!** ✅
 ### **Problem 3: "Port 8080 already in use"**
 
 **You see error when starting frontend:**
+
 ```
 Address already in use
 ```
 
 **Fix:**
+
 ```bash
 # Kill the process using port 8080
 lsof -ti:8080 | xargs kill -9
@@ -219,6 +240,7 @@ python -m http.server 8080 --bind 0.0.0.0
 **You report emergency but other device doesn't see it**
 
 **Checklist:**
+
 ```
 1. ✓ Check backend terminal shows: [BROADCAST] - Emergency event...
 2. ✓ Check other device console: [API] 🚨 Emergency event broadcast
@@ -271,28 +293,31 @@ Before opening on other device:
 
 ## 🎯 QUICK REFERENCE TABLE
 
-| Item | Example | Your Value |
-|------|---------|-----------|
-| Your Mac IP | `192.168.1.100` | _____________ |
-| Backend URL | `http://192.168.1.100:8000` | _____________ |
-| Frontend URL | `http://192.168.1.100:8080` | _____________ |
-| WebSocket URL | `ws://192.168.1.100:8000/ws` | _____________ |
+| Item          | Example                      | Your Value     |
+| ------------- | ---------------------------- | -------------- |
+| Your Mac IP   | `192.168.1.100`              | ******\_****** |
+| Backend URL   | `http://192.168.1.100:8000`  | ******\_****** |
+| Frontend URL  | `http://192.168.1.100:8080`  | ******\_****** |
+| WebSocket URL | `ws://192.168.1.100:8000/ws` | ******\_****** |
 
 ---
 
 ## 🎓 KEY CONCEPTS
 
 ### **What is `localhost`?**
+
 - Means "this computer"
 - Only works on the same device
 - Other devices can't see it
 
 ### **What is `192.168.1.100`?**
+
 - Your Mac's real IP address on the network
 - Other devices can see it
 - Devices on same WiFi can connect to it
 
 ### **What is `0.0.0.0`?**
+
 - Means "listen on all network interfaces"
 - Used in `--bind 0.0.0.0` flag
 - Makes services accessible from other devices
@@ -309,13 +334,14 @@ Before opening on other device:
 ✅ Backend terminal shows: `[WEBSOCKET] Client connected`  
 ✅ Can click "Go Online" on other device  
 ✅ Can accept rides on other device  
-✅ When reporting emergency, other devices get notified  
+✅ When reporting emergency, other devices get notified
 
 ---
 
 ## 📱 SUPPORTED DEVICES
 
 Works on:
+
 - ✅ Another Mac
 - ✅ Windows laptop
 - ✅ iPhone/iPad (Safari)
@@ -328,6 +354,7 @@ Works on:
 ## 💡 TIPS & TRICKS
 
 ### **Tip 1: Find IP Quickly**
+
 ```bash
 # Faster way to get just the IP
 ipconfig getifaddr en0
@@ -335,19 +362,24 @@ ipconfig getifaddr en0
 ```
 
 ### **Tip 2: Test Backend is Reachable**
+
 ```bash
 curl http://192.168.1.100:8000/health
 # Should show: {"status":"healthy"...}
 ```
 
 ### **Tip 3: Monitor Connections**
+
 In backend terminal, look for:
+
 ```
 [WEBSOCKET] Client connected. Total connections: 2
 ```
 
 ### **Tip 4: Auto-Reload Browser**
+
 If you change api.js:
+
 1. Save file
 2. Do hard refresh: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows)
 
@@ -356,6 +388,7 @@ If you change api.js:
 ## 🎉 YOU'RE READY!
 
 Now you can:
+
 - ✅ Run backend on Mac
 - ✅ Access from any device on WiFi
 - ✅ Test with 2-3+ devices simultaneously
