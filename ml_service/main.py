@@ -55,3 +55,9 @@ def predict_risk(req: RiskRequest):
     risk_score = min(1.0, base_risk + ml_noise)
     return {"risk_score": risk_score}
 
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🤖 Starting ML Service on port 8001...")
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+

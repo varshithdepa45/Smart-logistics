@@ -1,281 +1,357 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Dynamic Dispatch System</title>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title> Dynamic Dispatch System</title>
+    <!-- Mapbox CSS & JS -->
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 
-  <!-- Mapbox CSS & JS -->
-  <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
-  <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+    <!-- Mapbox Directions -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.0/mapbox-gl-directions.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.0/mapbox-gl-directions.css"
+      type="text/css"
+    />
 
-  <!-- Mapbox Directions -->
-  <script
-    src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.0/mapbox-gl-directions.js"></script>
-  <link rel="stylesheet"
-    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.0/mapbox-gl-directions.css"
-    type="text/css" />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css" />
 
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="style.css">
-</head>
+    <!-- API Client -->
+    <script src="api.js"></script>
+  </head>
 
-<body>
-  <div class="container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <!-- Driver Profile -->
-      <div class="driver-profile">
-        <div class="avatar">
-          <i class="fas fa-user"></i>
-        </div>
-        <div class="driver-info">
-          <h3>Driver Name</h3>
-          <p>Rating: 4.8 ★</p>
-          <p>Vehicle: Bike • KA01AB1234</p>
-          <p>Status: <span id="driverStatus">Offline</span></p>
-        </div>
-        <button class="online-toggle" id="toggleOnline">
-          <span class="status-indicator offline"></span>
-          <span class="status-text">Go Online</span>
-        </button>
-      </div>
-
-      <!-- Notifications Panel -->
-      <div class="notifications-panel">
-        <div class="panel-header">
-          <h3><i class="fas fa-bell"></i> Notifications</h3>
-          <button class="clear-btn" id="clearNotifications">Clear All</button>
-        </div>
-        <div class="notifications-list" id="notificationsList">
-          <!-- Notifications will be dynamically added here -->
-        </div>
-      </div>
-
-      <!-- Ride Request Panel -->
-      <div class="ride-request" id="rideRequest">
-        <h3><i class="fas fa-motorcycle"></i> New Ride Request</h3>
-        <div class="request-details">
-          <p><strong>From:</strong> <span id="pickupLocation">MG Road, Bangalore</span></p>
-          <p><strong>To:</strong> <span id="dropLocation">Indiranagar, Bangalore</span></p>
-          <p><strong>Distance:</strong> <span id="rideDistance">5.2 km</span></p>
-          <p><strong>Fare:</strong> <span id="rideFare">₹85</span></p>
-          <p><strong>Time to Reach:</strong> <span id="timeToReach">12 mins</span></p>
-          <div class="request-timer">
-            <i class="fas fa-clock"></i>
-            <span id="requestTimer">30</span> seconds remaining
+  <body>
+    <div class="container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <!-- Driver Profile -->
+        <div class="driver-profile">
+          <div class="avatar">
+            <i class="fas fa-user"></i>
           </div>
-          <div class="request-actions">
-            <button class="btn-accept" id="acceptRide">
-              <i class="fas fa-check"></i> Accept
-            </button>
-            <button class="btn-reject" id="rejectRide">
-              <i class="fas fa-times"></i> Reject
-            </button>
-            <button class="btn-reassign" id="reassignRequest">
-              <i class="fas fa-user-friends"></i> Reassign
-            </button>
+          <div class="driver-info">
+            <h3>Driver Name</h3>
+            <p>Rating: 4.8 ★</p>
+            <p>Vehicle: Bike • KA01AB1234</p>
+            <p>Status: <span id="driverStatus">Offline</span></p>
+          </div>
+          <button class="online-toggle" id="toggleOnline">
+            <span class="status-indicator offline"></span>
+            <span class="status-text">Go Online</span>
+          </button>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div class="notifications-panel">
+          <div class="panel-header">
+            <h3><i class="fas fa-bell"></i> Notifications</h3>
+            <button class="clear-btn" id="clearNotifications">Clear All</button>
+          </div>
+          <div class="notifications-list" id="notificationsList">
+            <!-- Notifications will be dynamically added here -->
           </div>
         </div>
-      </div>
 
-      <!-- Active Ride Panel -->
-      <div class="active-ride" id="activeRide">
-        <h3><i class="fas fa-running"></i> Active Ride</h3>
-        <div class="ride-details">
-          <p><strong>Customer:</strong> <span id="customerName">Rahul Sharma</span></p>
-          <p><strong>Phone:</strong> <span id="customerPhone">+91 98765 43210</span></p>
-          <p><strong>Pickup:</strong> <span id="activePickup">MG Road</span></p>
-          <p><strong>Drop:</strong> <span id="activeDrop">Indiranagar</span></p>
-          <p><strong>Ride ID:</strong> <span id="rideId">RIDE-2023-001</span></p>
-
-          <div class="ride-progress">
-            <div class="progress-bar">
-              <div class="progress-fill" id="rideProgress"></div>
+        <!-- Ride Request Panel -->
+        <div class="ride-request" id="rideRequest">
+          <h3><i class="fas fa-motorcycle"></i> New Ride Request</h3>
+          <div class="request-details">
+            <p>
+              <strong>From:</strong>
+              <span id="pickupLocation">MG Road, Bangalore</span>
+            </p>
+            <p>
+              <strong>To:</strong>
+              <span id="dropLocation">Indiranagar, Bangalore</span>
+            </p>
+            <p>
+              <strong>Distance:</strong> <span id="rideDistance">5.2 km</span>
+            </p>
+            <p><strong>Fare:</strong> <span id="rideFare">₹85</span></p>
+            <p>
+              <strong>Time to Reach:</strong>
+              <span id="timeToReach">12 mins</span>
+            </p>
+            <div class="request-timer">
+              <i class="fas fa-clock"></i>
+              <span id="requestTimer">30</span> seconds remaining
             </div>
-            <p id="rideStatusText">On the way to pickup</p>
-          </div>
-
-          <!-- Emergency & Reassign Section -->
-          <div class="emergency-section">
-            <h4><i class="fas fa-exclamation-triangle"></i> Need Help?</h4>
-            <div class="emergency-actions">
-              <button class="btn-emergency" id="raiseEmergency">
-                <i class="fas fa-ambulance"></i> Emergency
+            <div class="request-actions">
+              <button class="btn-accept" id="acceptRide">
+                <i class="fas fa-check"></i> Accept
               </button>
-              <button class="btn-reassign-active" id="reassignActiveRide">
-                <i class="fas fa-user-exchange"></i> Reassign Ride
+              <button class="btn-reject" id="rejectRide">
+                <i class="fas fa-times"></i> Reject
               </button>
-              <button class="btn-call-support" id="callSupport">
-                <i class="fas fa-headset"></i> Call Support
+              <button class="btn-reassign" id="reassignRequest">
+                <i class="fas fa-user-friends"></i> Reassign
               </button>
             </div>
           </div>
+        </div>
 
-          <div class="ride-actions">
-            <button class="btn-call">
-              <i class="fas fa-phone"></i> Call Customer
-            </button>
-            <button class="btn-navigate">
-              <i class="fas fa-directions"></i> Navigate
-            </button>
-            <button class="btn-complete" id="completeRide">
-              <i class="fas fa-flag-checkered"></i> Complete Ride
-            </button>
+        <!-- Active Ride Panel -->
+        <div class="active-ride" id="activeRide">
+          <h3><i class="fas fa-running"></i> Active Ride</h3>
+          <div class="ride-details">
+            <p>
+              <strong>Customer:</strong>
+              <span id="customerName">Rahul Sharma</span>
+            </p>
+            <p>
+              <strong>Phone:</strong>
+              <span id="customerPhone">+91 98765 43210</span>
+            </p>
+            <p>
+              <strong>Pickup:</strong> <span id="activePickup">MG Road</span>
+            </p>
+            <p>
+              <strong>Drop:</strong> <span id="activeDrop">Indiranagar</span>
+            </p>
+            <p>
+              <strong>Ride ID:</strong> <span id="rideId">RIDE-2023-001</span>
+            </p>
+
+            <div class="ride-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" id="rideProgress"></div>
+              </div>
+              <p id="rideStatusText">On the way to pickup</p>
+            </div>
+
+            <!-- Emergency & Reassign Section -->
+            <div class="emergency-section">
+              <h4><i class="fas fa-exclamation-triangle"></i> Need Help?</h4>
+              <div class="emergency-actions">
+                <button class="btn-emergency" id="raiseEmergency">
+                  <i class="fas fa-ambulance"></i> Emergency
+                </button>
+                <button class="btn-reassign-active" id="reassignActiveRide">
+                  <i class="fas fa-user-exchange"></i> Reassign Ride
+                </button>
+                <button class="btn-call-support" id="callSupport">
+                  <i class="fas fa-headset"></i> Call Support
+                </button>
+              </div>
+            </div>
+
+            <div class="ride-actions">
+              <button class="btn-call">
+                <i class="fas fa-phone"></i> Call Customer
+              </button>
+              <button class="btn-navigate">
+                <i class="fas fa-directions"></i> Navigate
+              </button>
+              <button class="btn-complete" id="completeRide">
+                <i class="fas fa-flag-checkered"></i> Complete Ride
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Emergency Modal (Hidden by default) -->
-      <div class="emergency-modal" id="emergencyModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3><i class="fas fa-exclamation-triangle"></i> Emergency / Reassignment Request</h3>
-            <button class="close-modal" id="closeModal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="emergency-options">
-              <h4>Select Reason for Reassignment:</h4>
-              <div class="reasons-list">
-                <label class="reason-option">
-                  <input type="radio" name="reassignReason" value="vehicle_issue">
-                  <span>Vehicle Breakdown</span>
-                </label>
-                <label class="reason-option">
-                  <input type="radio" name="reassignReason" value="health_issue">
-                  <span>Health Issue</span>
-                </label>
-                <label class="reason-option">
-                  <input type="radio" name="reassignReason" value="family_emergency">
-                  <span>Family Emergency</span>
-                </label>
-                <label class="reason-option">
-                  <input type="radio" name="reassignReason" value="road_block">
-                  <span>Road Block/Traffic</span>
-                </label>
-                <label class="reason-option">
-                  <input type="radio" name="reassignReason" value="customer_issue">
-                  <span>Customer Issue</span>
-                </label>
-                <label class="reason-option">
-                  <input type="radio" name="reassignReason" value="other">
-                  <span>Other Reason</span>
-                </label>
-              </div>
+        <!-- Emergency Modal (Hidden by default) -->
+        <div class="emergency-modal" id="emergencyModal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>
+                <i class="fas fa-exclamation-triangle"></i> Emergency /
+                Reassignment Request
+              </h3>
+              <button class="close-modal" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="emergency-options">
+                <h4>Select Reason for Reassignment:</h4>
+                <div class="reasons-list">
+                  <label class="reason-option">
+                    <input
+                      type="radio"
+                      name="reassignReason"
+                      value="vehicle_issue"
+                    />
+                    <span>Vehicle Breakdown</span>
+                  </label>
+                  <label class="reason-option">
+                    <input
+                      type="radio"
+                      name="reassignReason"
+                      value="health_issue"
+                    />
+                    <span>Health Issue</span>
+                  </label>
+                  <label class="reason-option">
+                    <input
+                      type="radio"
+                      name="reassignReason"
+                      value="family_emergency"
+                    />
+                    <span>Family Emergency</span>
+                  </label>
+                  <label class="reason-option">
+                    <input
+                      type="radio"
+                      name="reassignReason"
+                      value="road_block"
+                    />
+                    <span>Road Block/Traffic</span>
+                  </label>
+                  <label class="reason-option">
+                    <input
+                      type="radio"
+                      name="reassignReason"
+                      value="customer_issue"
+                    />
+                    <span>Customer Issue</span>
+                  </label>
+                  <label class="reason-option">
+                    <input type="radio" name="reassignReason" value="other" />
+                    <span>Other Reason</span>
+                  </label>
+                </div>
 
-              <div class="additional-notes">
-                <label for="emergencyNotes">Additional Details (Optional):</label>
-                <textarea id="emergencyNotes" placeholder="Please provide any additional details..."></textarea>
-              </div>
+                <div class="additional-notes">
+                  <label for="emergencyNotes"
+                    >Additional Details (Optional):</label
+                  >
+                  <textarea
+                    id="emergencyNotes"
+                    placeholder="Please provide any additional details..."
+                  ></textarea>
+                </div>
 
-              <div class="priority-level">
-                <label>Priority Level:</label>
-                <div class="priority-options">
-                  <button class="priority-btn low" data-priority="low">Low</button>
-                  <button class="priority-btn medium" data-priority="medium">Medium</button>
-                  <button class="priority-btn high active" data-priority="high">High</button>
-                  <button class="priority-btn critical" data-priority="critical">Critical</button>
+                <div class="priority-level">
+                  <label>Priority Level:</label>
+                  <div class="priority-options">
+                    <button class="priority-btn low" data-priority="low">
+                      Low
+                    </button>
+                    <button class="priority-btn medium" data-priority="medium">
+                      Medium
+                    </button>
+                    <button
+                      class="priority-btn high active"
+                      data-priority="high"
+                    >
+                      High
+                    </button>
+                    <button
+                      class="priority-btn critical"
+                      data-priority="critical"
+                    >
+                      Critical
+                    </button>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button class="btn-submit" id="submitEmergency">
+                    <i class="fas fa-paper-plane"></i> Submit Request
+                  </button>
+                  <button class="btn-cancel" id="cancelEmergency">
+                    Cancel
+                  </button>
                 </div>
               </div>
 
-              <div class="modal-actions">
-                <button class="btn-submit" id="submitEmergency">
-                  <i class="fas fa-paper-plane"></i> Submit Request
-                </button>
-                <button class="btn-cancel" id="cancelEmergency">
-                  Cancel
-                </button>
+              <div class="reassignment-status" id="reassignmentStatus">
+                <!-- Reassignment status will be shown here -->
               </div>
             </div>
+          </div>
+        </div>
 
-            <div class="reassignment-status" id="reassignmentStatus">
-              <!-- Reassignment status will be shown here -->
+        <!-- Earnings Panel -->
+        <div class="earnings">
+          <h3><i class="fas fa-rupee-sign"></i> Today's Performance</h3>
+          <div class="earnings-details">
+            <div class="stat-item">
+              <span class="stat-label">Rides Completed</span>
+              <span class="stat-value" id="ridesCompleted">12</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Earnings</span>
+              <span class="stat-value" id="totalEarnings">₹1020</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Online Time</span>
+              <span class="stat-value" id="onlineTime">4h 32m</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Reassignments</span>
+              <span class="stat-value" id="reassignmentsCount">0</span>
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <!-- Earnings Panel -->
-      <div class="earnings">
-        <h3><i class="fas fa-rupee-sign"></i> Today's Performance</h3>
-        <div class="earnings-details">
-          <div class="stat-item">
-            <span class="stat-label">Rides Completed</span>
-            <span class="stat-value" id="ridesCompleted">12</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Total Earnings</span>
-            <span class="stat-value" id="totalEarnings">₹1020</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Online Time</span>
-            <span class="stat-value" id="onlineTime">4h 32m</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Reassignments</span>
-            <span class="stat-value" id="reassignmentsCount">0</span>
+      <!-- Main Map Area -->
+      <main class="map-container">
+        <div id="map"></div>
+
+        <!-- Map Controls -->
+        <div class="map-controls">
+          <button class="map-btn" id="locateMe" title="Locate Me">
+            <i class="fas fa-location-arrow"></i>
+          </button>
+          <button class="map-btn" id="zoomIn" title="Zoom In">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button class="map-btn" id="zoomOut" title="Zoom Out">
+            <i class="fas fa-minus"></i>
+          </button>
+          <button class="map-btn" id="menuToggle" title="Toggle Menu">
+            <i class="fas fa-bars"></i>
+          </button>
+          <button class="map-btn" id="notificationBell" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-count" id="notificationCount">0</span>
+          </button>
+        </div>
+
+        <!-- Nearby Drivers Panel (For Reassignment) -->
+        <div class="nearby-drivers" id="nearbyDrivers">
+          <h4><i class="fas fa-users"></i> Available Drivers Nearby</h4>
+          <div class="drivers-list" id="driversList">
+            <!-- Nearby drivers will be listed here -->
           </div>
         </div>
-      </div>
-    </aside>
 
-    <!-- Main Map Area -->
-    <main class="map-container">
-      <div id="map"></div>
-
-      <!-- Map Controls -->
-      <div class="map-controls">
-        <button class="map-btn" id="locateMe" title="Locate Me">
-          <i class="fas fa-location-arrow"></i>
-        </button>
-        <button class="map-btn" id="zoomIn" title="Zoom In">
-          <i class="fas fa-plus"></i>
-        </button>
-        <button class="map-btn" id="zoomOut" title="Zoom Out">
-          <i class="fas fa-minus"></i>
-        </button>
-        <button class="map-btn" id="menuToggle" title="Toggle Menu">
-          <i class="fas fa-bars"></i>
-        </button>
-        <button class="map-btn" id="notificationBell" title="Notifications">
-          <i class="fas fa-bell"></i>
-          <span class="notification-count" id="notificationCount">0</span>
-        </button>
-      </div>
-
-      <!-- Nearby Drivers Panel (For Reassignment) -->
-      <div class="nearby-drivers" id="nearbyDrivers">
-        <h4><i class="fas fa-users"></i> Available Drivers Nearby</h4>
-        <div class="drivers-list" id="driversList">
-          <!-- Nearby drivers will be listed here -->
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-message">
+            <i class="fas fa-info-circle"></i>
+            <span id="statusText"
+              >You're currently offline. Tap "Go Online" to start receiving
+              rides.</span
+            >
+          </div>
+          <div class="status-indicators">
+            <span class="indicator" id="connectionStatus">
+              <i class="fas fa-wifi"></i> Connected
+            </span>
+            <span class="indicator" id="gpsStatus">
+              <i class="fas fa-satellite"></i> GPS Active
+            </span>
+          </div>
         </div>
-      </div>
+      </main>
+    </div>
 
-      <!-- Status Bar -->
-      <div class="status-bar">
-        <div class="status-message">
-          <i class="fas fa-info-circle"></i>
-          <span id="statusText">You're currently offline. Tap "Go Online" to start receiving rides.</span>
-        </div>
-        <div class="status-indicators">
-          <span class="indicator" id="connectionStatus">
-            <i class="fas fa-wifi"></i> Connected
-          </span>
-          <span class="indicator" id="gpsStatus">
-            <i class="fas fa-satellite"></i> GPS Active
-          </span>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Scripts -->
-  <script src="script.js"></script>
-</body>
-
+    <!-- Scripts -->
+    <script src="script.js"></script>
+  </body>
 </html>

@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import requests
 from requests.adapters import HTTPAdapter
@@ -205,6 +206,15 @@ app = FastAPI(
     description="Stateful Decision Pipeline for Order Management",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# Enable CORS for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080", "http://localhost:80", "http://localhost", "http://127.0.0.1:8080", "http://127.0.0.1"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
