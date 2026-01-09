@@ -17,12 +17,13 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from typing import Set
 
 # ============================================================================
 # ENUMS & CONSTANTS
@@ -145,6 +146,52 @@ retry_strategy = Retry(
 adapter = HTTPAdapter(max_retries=retry_strategy)
 ml_session.mount("http://", adapter)
 ml_session.mount("https://", adapter)
+
+
+# ============================================================================
+# WEBSOCKET CONNECTION MANAGER (For Real-Time Broadcasting)
+# ============================================================================
+
+class ConnectionManager:
+    """Manages WebSocket connections and broadcasts events to all connected clients."""
+    
+    def __init__(self):
+        self.active_connections: Set[WebSocket] = set()
+    
+    async def connect(self, websocket: WebSocket):
+        """Accept a new WebSocket connection."""
+        await websocket.accept()
+        self.active_connections.add(websocket)
+        print(f"[WEBSOCKET] Client connected. Total connections: {len(self.active_connections)}")
+    
+    def disconnect(self, websocket: WebSocket):
+        """Remove a disconnected WebSocket client."""
+        self.active_connections.discard(websocket)
+        print(f"[WEBSOCKET] Client disconnected. Total connections: {len(self.active_connections)}")
+    
+    async def broadcast(self, message: dict):
+        """Send a message to all connected clients."""
+        if not self.active_connections:
+            return
+        
+        disconnected = set()
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                print(f"[WEBSOCKET_ERROR] Failed to send to client: {e}")
+                disconnected.add(connection)
+        
+        # Clean up disconnected clients
+        for connection in disconnected:
+            self.active_connections.discard(connection)
+    
+    def get_connection_count(self) -> int:
+        """Get number of active connections."""
+        return len(self.active_connections)
+
+
+manager = ConnectionManager()
 
 
 # ============================================================================
@@ -408,7 +455,7 @@ def handle_delay_event(event: DelayEvent):
 
         print(f"[EVENT_COMPLETE] - Event {event.event_id} processed successfully.\n")
 
-        return {
+        response_data = {
             "status": "success",
             "event_id": event.event_id,
             "order_id": event.order_id,
@@ -417,6 +464,26 @@ def handle_delay_event(event: DelayEvent):
             "order_status": order.status,
             "reassign_count": order.reassign_count
         }
+        
+        # ========== STEP 7: BROADCAST TO ALL CONNECTED CLIENTS ==========
+        # Notify all connected drivers about the event
+        import asyncio
+        broadcast_message = {
+            "type": "emergency_event",
+            "event_id": event.event_id,
+            "order_id": event.order_id,
+            "driver_id": event.driver_id,
+            "reason": event.reason,
+            "risk_score": risk_score,
+            "action_taken": action_taken,
+            "new_driver_id": order.assigned_driver_id if action_taken == "REASSIGNMENT_INITIATED" else None,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        asyncio.create_task(manager.broadcast(broadcast_message))
+        print(f"[BROADCAST] - Emergency event broadcasted to {manager.get_connection_count()} connected clients")
+
+        return response_data
 
 
 # ============================================================================
@@ -645,6 +712,41 @@ def root():
             "openapi": "GET /openapi.json"
         }
     }
+
+
+# ============================================================================
+# WEBSOCKET ENDPOINT: /ws (Real-Time Event Broadcasting)
+# ============================================================================
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time emergency event broadcasting.
+    
+    Clients can connect here to receive live updates about:
+    - Emergency events reported
+    - Driver reassignments
+    - Order status changes
+    
+    Usage:
+        const ws = new WebSocket('ws://localhost:8000/ws');
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Emergency:', data);
+        };
+    """
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive and listen for any messages from client
+            data = await websocket.receive_text()
+            print(f"[WEBSOCKET_MESSAGE] - Received from client: {data}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        print(f"[WEBSOCKET] - Client disconnected")
+    except Exception as e:
+        print(f"[WEBSOCKET_ERROR] - Connection error: {e}")
+        manager.disconnect(websocket)
 
 
 # ============================================================================

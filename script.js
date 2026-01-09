@@ -18,11 +18,42 @@ let reassignmentInProgress = false;
 let emergencyModalOpen = false;
 let selectedPriority = "high";
 let selectedReason = "";
+let connectedDriversCount = 1; // This driver
+
+// Handle incoming emergency event broadcasts from other drivers
+function onEmergencyEventBroadcast(event) {
+  console.log("[UI] 🚨 Emergency broadcast received:", event);
+
+  // Add notification about the emergency
+  addNotification(
+    "emergency_alert",
+    `🚨 Emergency Reported by ${event.driver_id}`,
+    `Issue: ${event.reason}\nRisk Score: ${(event.risk_score * 100).toFixed(
+      1
+    )}%\nAction: ${event.action_taken}`,
+    "danger"
+  );
+
+  // If this order was reassigned to us, highlight it
+  if (
+    event.new_driver_id === driverProfile.id &&
+    event.action_taken === "REASSIGNMENT_INITIATED"
+  ) {
+    addNotification(
+      "reassignment",
+      "✅ Order Assigned to You!",
+      `Order ${event.order_id} has been reassigned to you due to high risk.`,
+      "success"
+    );
+    rideInProgress = true;
+    currentRide = { orderId: event.order_id };
+  }
+}
 
 // Initialize the application
 document.addEventListener("DOMContentLoaded", async function () {
-  // Initialize API Client first
-  await initializeAPIClient();
+  // Initialize API Client first with emergency event callback
+  await initializeAPIClient(onEmergencyEventBroadcast);
 
   // Initialize geolocation
   navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {

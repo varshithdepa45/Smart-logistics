@@ -2,9 +2,15 @@
  * LOGISTICS FRONTEND API CLIENT
  * =============================
  * Handles all communication with the backend at http://localhost:8000
+ * Includes WebSocket support for real-time event broadcasting
  */
 
 const API_BASE_URL = "http://localhost:8000";
+const WS_BASE_URL = "ws://localhost:8000";
+
+// WebSocket connection for real-time events
+let websocket = null;
+let emergencyEventCallback = null;
 
 // Store driver and system state
 let driverProfile = {
@@ -15,6 +21,47 @@ let driverProfile = {
 };
 
 let systemState = {};
+
+/**
+ * Initialize WebSocket Connection for Real-Time Emergency Events
+ */
+function initializeWebSocket(onEmergencyEvent) {
+  try {
+    emergencyEventCallback = onEmergencyEvent;
+    websocket = new WebSocket(`${WS_BASE_URL}/ws`);
+
+    websocket.onopen = () => {
+      console.log(
+        "[API] WebSocket connected - ready to receive emergency broadcasts"
+      );
+    };
+
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("[API] 🚨 Emergency event broadcast received:", data);
+
+      if (data.type === "emergency_event" && emergencyEventCallback) {
+        emergencyEventCallback(data);
+      }
+    };
+
+    websocket.onerror = (error) => {
+      console.error("[API] WebSocket error:", error);
+    };
+
+    websocket.onclose = () => {
+      console.warn(
+        "[API] WebSocket disconnected - attempting to reconnect in 5s..."
+      );
+      setTimeout(initializeWebSocket, 5000);
+    };
+
+    return true;
+  } catch (error) {
+    console.error("[API] Failed to initialize WebSocket:", error);
+    return false;
+  }
+}
 
 /**
  * Health Check - Verify backend is running
@@ -298,7 +345,7 @@ async function resetSystem() {
  * Initialize API Client
  * Call this when the page loads
  */
-async function initializeAPIClient() {
+async function initializeAPIClient(onEmergencyEvent) {
   console.log("[API] Initializing API client...");
 
   // Check backend health
@@ -310,6 +357,11 @@ async function initializeAPIClient() {
 
     // Register this driver
     await registerOrUpdateDriver("AVAILABLE");
+
+    // Initialize WebSocket for real-time events
+    if (onEmergencyEvent) {
+      initializeWebSocket(onEmergencyEvent);
+    }
 
     console.log("[API] API client initialized successfully");
     return true;
@@ -343,8 +395,10 @@ function getOrderById(orderId) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     API_BASE_URL,
+    WS_BASE_URL,
     driverProfile,
     systemState,
+    initializeWebSocket,
     checkBackendHealth,
     fetchSystemState,
     fetchAllDrivers,
