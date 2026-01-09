@@ -10,6 +10,7 @@ Author: Hackathon Team
 Status: 100% Reliable, Observable, Correct
 """
 
+import os
 import random
 import threading
 from datetime import datetime, timezone
@@ -18,6 +19,9 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from fastapi import FastAPI, HTTPException, status
 import uvicorn
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # ============================================================================
 # ENUMS & CONSTANTS
@@ -129,6 +133,18 @@ class StateStore:
 # Global state store (persistent across requests)
 state_store = StateStore()
 
+# HTTP session for calling ML microservice with retries
+ml_session = requests.Session()
+retry_strategy = Retry(
+    total=3,
+    backoff_factor=0.5,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["POST"]
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+ml_session.mount("http://", adapter)
+ml_session.mount("https://", adapter)
+
 
 # ============================================================================
 # FASTAPI APP INITIALIZATION
@@ -198,24 +214,34 @@ app = FastAPI(
 
 def predict_delay_risk(order_id: str, driver_id: str, reason: str) -> float:
     """
-    Simulated ML risk prediction.
-    In production: Call your actual ML model here.
-
-    Args:
-        order_id: Order ID
-        driver_id: Driver ID
-        reason: Delay reason string
-
-    Returns:
-        Risk score (0.0 - 1.0) where 1.0 = critical delay risk
+    Obtain a risk score from the ML microservice. If the ML service
+    is unavailable, fall back to the local heuristic.
     """
-    # Simple heuristic: longer reason text = higher risk
+    ml_base = os.getenv("ML_SERVICE_URL", "http://127.0.0.1:8001")
+    ml_url = f"{ml_base}/predict-risk"
+    payload = {
+        "order_id": order_id,
+        "driver_id": driver_id,
+        "reason": reason
+    }
+
+    try:
+        resp = ml_session.post(ml_url, json=payload, timeout=2.0)
+        if resp.ok:
+            data = resp.json()
+            risk = float(data.get("risk_score", 0.0))
+            print(f"[ML_SERVICE] - Received risk_score={risk:.2f} from ML service")
+            return risk
+        else:
+            print(f"[ML_SERVICE] - Non-OK response from ML service: {resp.status_code}")
+    except requests.RequestException as e:
+        print(f"[ML_CALL_ERROR] - Could not reach ML service after retries: {e}")
+
+    # Fallback heuristic if ML service is unreachable
     base_risk = len(reason) / 100.0
-    # Add randomness to simulate ML variance
     ml_noise = random.uniform(0.0, 0.3)
     risk_score = min(1.0, base_risk + ml_noise)
-
-    print(f"[ML_PREDICTION] - Risk Score: {risk_score:.2f} (Reason: '{reason}')")
+    print(f"[ML_PREDICTION_FALLBACK] - Risk Score: {risk_score:.2f} (Reason: '{reason}')")
     return risk_score
 
 
